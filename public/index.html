@@ -100,7 +100,7 @@
 
     async function chargerSignalements() {
         try {
-            const res = await fetch(`${API_URL}/signalements`);
+            const res = await fetch('https://mon-projet-production-4783.up.railway.app/signalements', { ... });
             const signalements = await res.json();
             const tbody = document.querySelector('#tableSignalements tbody');
             tbody.innerHTML = '';
