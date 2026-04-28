@@ -11,10 +11,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 
 const db = mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'nloubou_dev',
-    password: process.env.DB_PASSWORD || '19DEC', 
-    database: process.env.DB_NAME || 'eco_collecte'
+    host: process.env.MYSQLHOST || process.env.DB_HOST || 'localhost',
+    user: process.env.MYSQLUSER || process.env.DB_USER || 'nloubou_dev',
+    password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '19DEC', 
+    database: process.env.MYSQLDATABASE || process.env.DB_NAME || 'eco_collecte',
+    port: process.env.MYSQLPORT || process.env.DB_PORT || 3306
 });
 
 db.connect(err => {
@@ -73,8 +74,8 @@ app.use((req, res, next) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-app.listen(3000, () => {
-    console.log(`✅ Serveur lancé sur le port 3000`);
+app.listen(PORT, () => {
+    console.log(`✅ Serveur lancé sur le port ${PORT}`);
 });
