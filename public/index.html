@@ -3,31 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoTrack - Gestion des Déchets</title>
+    <title>EcoTrack Yaoundé</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: #f4f7f6; color: #333; }
         .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1, h2 { color: #2c3e50; border-bottom: 2px solid #27ae60; }
+        h1 { color: #27ae60; text-align: center; border-bottom: 2px solid #27ae60; padding-bottom: 10px; }
         .section { margin-bottom: 30px; padding: 15px; border: 1px solid #eee; border-radius: 5px; }
-        input, select, button { width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #ddd; }
-        button { background-color: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 15px; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .stat-card { background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 5px solid #27ae60; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        label { font-weight: bold; display: block; margin-top: 10px; }
+        input, select, button, textarea { width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { background-color: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background-color: #219150; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background-color: #27ae60; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        #messageStatus { margin-top: 10px; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>EcoTrack : Collecte & Analyse</h1>
+    <h1>EcoTrack : Signalement Yaoundé</h1>
 
     <div class="section">
-        <h2>📥 Signalement de déchets</h2>
+        <h2>📥 Nouveau Signalement</h2>
         <form id="formSignalement">
-            <label>Quartier :</label>
-            <input type="text" id="quartier" placeholder="Ex: Melen, Bastos..." required>
+            <label>Localisation (Quartier/Rue) :</label>
+            <input type="text" id="localisation" placeholder="Ex: Face École Polytechnique, Melen" required>
+            
             <label>Type de déchet :</label>
             <select id="type_dechet">
                 <option value="Plastique">Plastique</option>
@@ -36,97 +39,97 @@
                 <option value="Electronique">Électronique</option>
                 <option value="Papier">Papier/Carton</option>
             </select>
-            <label>Urgence (1-5) :</label>
-            <input type="number" id="niveau_urgence" min="1" max="5" value="1" required>
-            <button type="submit">Enregistrer le signalement</button>
+
+            <label>Description / Niveau d'urgence :</label>
+            <textarea id="description" placeholder="Précisez l'état ou l'urgence..."></textarea>
+            
+            <button type="submit">Envoyer sur Railway</button>
         </form>
         <div id="messageStatus"></div>
     </div>
 
     <div class="section">
-        <h2>📊 Objectifs Statistiques</h2>
-        <button onclick="chargerStatistiques()">Calculer Moyennes et Modes</button>
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Moyenne d'urgence</h3>
-                <div id="moyenneResultat">Cliquer pour calculer...</div>
-            </div>
-            <div class="stat-card">
-                <h3>Mode des Quartiers</h3>
-                <div id="modeResultat">Cliquer pour calculer...</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="section">
-        <h2>📋 Derniers Signalements</h2>
+        <h2>📋 Liste des signalements en temps réel</h2>
+        <button onclick="chargerSignalements()" style="background-color: #3498db; width: auto; padding: 5px 15px; margin-bottom: 10px;">Rafraîchir la liste</button>
         <table id="tableSignalements">
             <thead>
-                <tr><th>ID</th><th>Quartier</th><th>Type</th><th>Urgence</th><th>Date</th></tr>
+                <tr>
+                    <th>Quartier</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Date</th>
+                </tr>
             </thead>
-            <tbody></tbody>
+            <tbody>
+                </tbody>
         </table>
     </div>
 </div>
 
 <script>
-    // On utilise 127.0.0.1 pour forcer l'IPv4 sur Ubuntu
-    const API_URL = 'http://127.0.0.1:3000/api';
+    // URL de ton API sur Railway
+    const API_URL = 'https://mon-projet-production-4783.up.railway.app';
 
+    // 1. Envoyer un signalement
     document.getElementById('formSignalement').addEventListener('submit', async (e) => {
         e.preventDefault();
         const statusDiv = document.getElementById('messageStatus');
+        
         const data = {
-            quartier: document.getElementById('quartier').value,
+            localisation: document.getElementById('localisation').value,
             type_dechet: document.getElementById('type_dechet').value,
-            niveau_urgence: document.getElementById('niveau_urgence').value
+            description: document.getElementById('description').value
         };
 
         try {
+            statusDiv.innerText = "Envoi en cours...";
             const response = await fetch(`${API_URL}/signalements`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
+
             if (response.ok) {
-                statusDiv.innerHTML = "<p style='color:green;'>✅ Signalement enregistré !</p>";
+                statusDiv.innerHTML = "<span style='color:green;'>✅ Signalement enregistré avec succès !</span>";
                 document.getElementById('formSignalement').reset();
-                chargerSignalements();
+                chargerSignalements(); // Rafraîchir le tableau
+            } else {
+                statusDiv.innerHTML = "<span style='color:red;'>❌ Erreur serveur lors de l'enregistrement.</span>";
             }
         } catch (err) {
-            statusDiv.innerHTML = "<p style='color:red;'>❌ Erreur de connexion au serveur.</p>";
+            statusDiv.innerHTML = "<span style='color:red;'>❌ Impossible de contacter le serveur Railway.</span>";
         }
     });
 
+    // 2. Charger les signalements depuis la base de données
     async function chargerSignalements() {
+        const tbody = document.querySelector('#tableSignalements tbody');
         try {
-            const res = await fetch('https://mon-projet-production-4783.up.railway.app/signalements', { ... });
+            const res = await fetch(`${API_URL}/signalements`);
             const signalements = await res.json();
-            const tbody = document.querySelector('#tableSignalements tbody');
-            tbody.innerHTML = '';
+            
+            tbody.innerHTML = ''; // On vide le tableau avant de le remplir
+            
             signalements.forEach(s => {
-                tbody.innerHTML += `<tr><td>${s.id}</td><td>${s.quartier}</td><td>${s.type_dechet}</td><td>${s.niveau_urgence}/5</td><td>${new Date(s.date_ajout).toLocaleDateString()}</td></tr>`;
+                const date = s.date_signalement ? new Date(s.date_signalement).toLocaleString('fr-FR') : "Date inconnue";
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${s.localisation}</td>
+                        <td>${s.type_dechet}</td>
+                        <td>${s.description || 'Pas de détails'}</td>
+                        <td>${date}</td>
+                    </tr>
+                `;
             });
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error("Erreur de chargement:", e);
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Erreur lors du chargement des données.</td></tr>';
+        }
     }
 
-    async function chargerStatistiques() {
-        try {
-            const resMoy = await fetch(`${API_URL}/stats/moyenne-urgence`);
-            const moyennes = await resMoy.json();
-            let moyHtml = "<ul>";
-            moyennes.forEach(m => moyHtml += `<li><strong>${m.quartier}</strong>: ${parseFloat(m.moyenne).toFixed(2)}</li>`);
-            document.getElementById('moyenneResultat').innerHTML = moyHtml + "</ul>";
-
-            const resMod = await fetch(`${API_URL}/stats/mode-quartiers`);
-            const modes = await resMod.json();
-            let modHtml = "<ul>";
-            modes.forEach(m => modHtml += `<li>${m.type_dechet}: <strong>${m.quartier}</strong></li>`);
-            document.getElementById('modeResultat').innerHTML = modHtml + "</ul>";
-        } catch (err) { console.error(err); }
-    }
-
+    // Charger les données dès l'ouverture de la page
     window.onload = chargerSignalements;
 </script>
+
 </body>
 </html>
